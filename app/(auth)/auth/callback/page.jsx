@@ -20,7 +20,7 @@ export default function AuthCallback() {
         console.log('State:', state);
 
         try {
-          const res = await fetch('http://localhost:7000/auth/github/callback', {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/github/callback`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

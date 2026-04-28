@@ -5,7 +5,17 @@ import Link from 'next/link';
 
 const LoginPage = () => {
   const handleGithubLogin = async () => {
-   window.location.href = "http://localhost:7000/auth/github"
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/github/url`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Failed to get auth URL:', err);
+    }
   };
 
   return (
