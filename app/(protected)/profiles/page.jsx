@@ -3,15 +3,29 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
 
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [userRole, setUserRole] = useState('analyst');
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [creating, setCreating] = useState(false);
   const [filters, setFilters] = useState({
     gender: '', country: '', ageGroup: '', sortBy: 'created_at', order: 'desc'
   });
+  
+  const { addToast } = useToast();
+
+  const fetchUser = async () => {
+    try {
+      const data = await apiRequest('/auth/me');
+      setUserRole(data.data.role);
+    } catch (err) {}
+  };
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -35,19 +49,111 @@ export default function ProfilesPage() {
     }
   };
 
-  useEffect(() => { fetchProfiles(); }, [page, filters]);
+  useEffect(() => { 
+    fetchUser();
+    fetchProfiles(); 
+  }, [page, filters]);
 
   const handleFilterChange = (e) => {
     setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
     setPage(1);
   };
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams({
+        format: 'csv',
+        gender: filters.gender,
+        country: filters.country,
+        age_group: filters.ageGroup
+      });
+      
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const res = await fetch(`${baseUrl}/api/profiles/export?${params}`, {
+        headers: { 'X-API-Version': '1' },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Export failed');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `profiles_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      addToast('Export successful!', 'success');
+    } catch (err) {
+      addToast('Export failed', 'error');
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setCreating(true);
+    try {
+      await apiRequest('/api/profiles', {
+        method: 'POST',
+        body: JSON.stringify({ name: newName })
+      });
+      addToast('Profile created successfully', 'success');
+      setNewName('');
+      setShowCreate(false);
+      fetchProfiles();
+    } catch (err) {
+      addToast('Failed to create profile', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-12 max-w-6xl mx-auto space-y-6 md:space-y-10">
-      <header className="space-y-1">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight">Profiles</h1>
-        <p className="text-zinc-500 text-sm">Browse and filter registered profiles.</p>
-      </header>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <header className="space-y-1">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-gradient">Profiles</h1>
+          <p className="text-zinc-500 text-sm">Browse and filter registered profiles.</p>
+        </header>
+        
+        <div className="flex gap-3">
+           {userRole === 'admin' && (
+             <button 
+              onClick={() => setShowCreate(!showCreate)}
+              className="px-6 py-3 rounded-xl bg-white text-black font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+             >
+               {showCreate ? 'Cancel' : 'Create Profile'}
+             </button>
+           )}
+           <button 
+            onClick={handleExport}
+            className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 font-bold text-sm hover:bg-white/10 transition-all"
+           >
+             Export CSV
+           </button>
+        </div>
+      </div>
+
+      {showCreate && (
+        <form onSubmit={handleCreate} className="glass-panel p-8 rounded-3xl border border-white/5 animate-slide-up space-y-4">
+          <h2 className="text-lg font-bold">Register New Profile</h2>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input 
+              type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
+              placeholder="Full Name (e.g. Harriet Tubman)"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/20"
+            />
+            <button 
+              type="submit" disabled={creating}
+              className="px-8 py-3 bg-white text-black rounded-xl font-bold text-sm disabled:opacity-50"
+            >
+              {creating ? 'Processing...' : 'Register'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Responsive Filter Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
