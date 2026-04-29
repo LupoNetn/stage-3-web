@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiRequest } from '@/lib/api';
 
 export default function AccountPage() {
   const [user, setUser] = useState(null);
@@ -9,11 +10,7 @@ export default function AccountPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
-          headers: { 'X-API-Version': '1' },
-          credentials: 'include'
-        });
-        const data = await res.json();
+        const data = await apiRequest('/auth/me');
         setUser(data.data);
       } catch (err) {
         console.error('Failed to fetch user:', err);

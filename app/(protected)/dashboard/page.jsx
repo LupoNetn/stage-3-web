@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiRequest } from '@/lib/api';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ total: 0, loading: true });
@@ -8,14 +9,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles?limit=1&page=1`, {
-          headers: { 'X-API-Version': '1' },
-          credentials: 'include'
-        });
-        const data = await res.json();
+        const data = await apiRequest('/api/profiles?limit=1&page=1');
         setStats({ total: data.total || 0, loading: false });
       } catch (err) {
-        console.error('Failed to fetch stats:', err);
         setStats({ total: 0, loading: false });
       }
     };

@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { apiRequest } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const { addToast } = useToast();
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -16,14 +19,16 @@ export default function SearchPage() {
     setLoading(true);
     setHasSearched(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles/search?q=${encodeURIComponent(query)}`, {
-        headers: { 'X-API-Version': '1' },
-        credentials: 'include'
-      });
-      const data = await res.json();
+      const data = await apiRequest(`/api/profiles/search?q=${encodeURIComponent(query)}`);
       setResults(data.data || []);
+      if (data.data?.length === 0) {
+        addToast('No exact matches found. Try a broader search.', 'info');
+      } else {
+        addToast(`Found ${data.data?.length} matching profiles.`, 'success');
+      }
     } catch (err) {
       console.error('Search failed:', err);
+      addToast('Search failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -32,7 +37,7 @@ export default function SearchPage() {
   return (
     <div className="p-4 md:p-12 max-w-5xl mx-auto space-y-12 md:space-y-16">
       <header className="text-center space-y-2">
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight">Search</h1>
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gradient">Search</h1>
         <p className="text-zinc-500 text-sm md:text-base">Find profiles using natural language queries.</p>
       </header>
 
@@ -64,7 +69,7 @@ export default function SearchPage() {
       </div>
 
       {hasSearched && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-slide-up">
           <h2 className="text-xs font-bold text-zinc-600 uppercase tracking-widest text-center">
             Results ({results.length})
           </h2>

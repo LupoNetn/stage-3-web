@@ -2,11 +2,13 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/context/ToastContext';
 
 function CallbackHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -24,15 +26,18 @@ function CallbackHandler() {
 
           const data = await res.json();
           if (data.status === 'success') {
+            addToast('Access Granted. Welcome back.', 'success');
             setTimeout(() => {
               router.push('/dashboard');
             }, 1000);
           } else {
             setError(data.message || 'Authentication failed');
+            addToast(data.message || 'Authentication failed', 'error');
           }
         } catch (err) {
           console.error('Error during callback:', err);
           setError('Failed to connect to authentication server.');
+          addToast('Network error: Could not reach authentication server.', 'error');
         }
       } else {
         setError('No authentication code found.');
@@ -40,7 +45,7 @@ function CallbackHandler() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, addToast]);
 
   if (error) {
     return (

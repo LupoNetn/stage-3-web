@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiRequest } from '@/lib/api';
 
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState([]);
@@ -24,11 +25,7 @@ export default function ProfilesPage() {
         sort_by: filters.sortBy,
         order: filters.order
       });
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles?${params}`, {
-        headers: { 'X-API-Version': '1' },
-        credentials: 'include'
-      });
-      const data = await res.json();
+      const data = await apiRequest(`/api/profiles?${params}`);
       setProfiles(data.data || []);
       setTotalPages(data.total_pages || 1);
     } catch (err) {

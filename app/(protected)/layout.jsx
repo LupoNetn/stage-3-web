@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { apiRequest } from '@/lib/api';
 
 export default function ProtectedLayout({ children }) {
   const [user, setUser] = useState(null);
@@ -13,26 +14,10 @@ export default function ProtectedLayout({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
-          method: 'GET',
-          headers: { 'X-API-Version': '1' },
-          credentials: 'include',
-        });
-
-        if (res.status === 401) {
-          router.push('/login');
-          return;
-        }
-
-        const data = await res.json();
-        if (data.status === 'success') {
-          setUser(data.data);
-        } else {
-          router.push('/login');
-        }
+        const data = await apiRequest('/auth/me');
+        setUser(data.data);
       } catch (err) {
-        console.error('Auth check failed:', err);
-        router.push('/login');
+        // apiRequest handles redirect on refresh failure
       } finally {
         setLoading(false);
       }
