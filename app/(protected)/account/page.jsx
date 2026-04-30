@@ -103,6 +103,24 @@ export default function AccountPage() {
               </div>
               <span className="px-6 py-2 rounded-full border border-white/10 text-zinc-600 text-[10px] font-bold uppercase tracking-[0.3em]">Hardware Secured</span>
             </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 group p-8 rounded-[32px] hover:bg-white/[0.02] transition-all border border-transparent hover:border-white/5">
+              <div className="space-y-2">
+                <h4 className="text-xl font-bold tracking-tight text-red-400">Terminate Session</h4>
+                <p className="text-sm text-zinc-500 font-light">Securely destroy your authentication tokens and log out.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await apiRequest('/auth/logout', { method: 'POST' });
+                  } catch(e) {}
+                  window.location.href = '/login';
+                }}
+                className="px-8 py-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_30px_rgba(239,68,68,0.2)]"
+              >
+                Logout Now
+              </button>
+            </div>
           </div>
         </section>
 
